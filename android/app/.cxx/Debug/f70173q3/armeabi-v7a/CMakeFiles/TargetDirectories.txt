@@ -1,0 +1,2 @@
+E:/Project/project_LawAlarm-front/android/app/.cxx/Debug/f70173q3/armeabi-v7a/CMakeFiles/edit_cache.dir
+E:/Project/project_LawAlarm-front/android/app/.cxx/Debug/f70173q3/armeabi-v7a/CMakeFiles/rebuild_cache.dir
