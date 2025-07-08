@@ -9,16 +9,20 @@ import 'dart:convert' show json;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
 
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:dio/dio.dart';
+import 'package:get/get.dart';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:law_alarm_front/services/api_test.dart';
 import 'sign_in_button.dart';
+
 
 /// The scopes required by this application.
 // #docregion Initialize
-const List<String> scopes = <String>[
-  'email',
-  'https://www.googleapis.com/auth/contacts.readonly',
+const List<String> myScopes = <String>[
+  'email','https://www.googleapis.com/auth/contacts.readonly'
 ];
 
 // GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -28,19 +32,10 @@ const List<String> scopes = <String>[
 // );
 // #enddocregion Initialize
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // ✅ 첫 줄에
-  runApp(
-    const MaterialApp(
-      title: 'Google Sign In',
-      home: LoginGoogle(),
-    ),
-  );
-}
+final dio = Dio();
 
 /// The SignInDemo app.
 class LoginGoogle extends StatefulWidget {
-  ///
   const LoginGoogle({super.key});
 
   @override
@@ -56,7 +51,8 @@ class _LoginGoogleState extends State<LoginGoogle> {
   @override
   void initState() {
     super.initState();
-    _googleSignIn = GoogleSignIn(scopes: ['email']); // ✅ 여기서 초기화
+
+    _googleSignIn = GoogleSignIn(scopes: myScopes); // ✅ 여기서 초기화
 
     _googleSignIn.onCurrentUserChanged
         .listen((GoogleSignInAccount? account) async {
@@ -65,7 +61,7 @@ class _LoginGoogleState extends State<LoginGoogle> {
       bool isAuthorized = account != null;
       // However, on web...
       if (kIsWeb && account != null) {
-        isAuthorized = await _googleSignIn.canAccessScopes(scopes);
+        isAuthorized = await _googleSignIn.canAccessScopes(myScopes);
       }
 // #enddocregion CanAccessScopes
 
@@ -77,6 +73,7 @@ class _LoginGoogleState extends State<LoginGoogle> {
       // Now that we know that the user can access the required scopes, the app
       // can call the REST API.
       if (isAuthorized) {
+        print('여가ㅣ 들어오나요?>');
         unawaited(_handleGetContact(account!));
       }
     });
@@ -94,21 +91,23 @@ class _LoginGoogleState extends State<LoginGoogle> {
     setState(() {
       _contactText = 'Loading contact info...';
     });
-    final http.Response response = await http.get(
-      Uri.parse('https://people.googleapis.com/v1/people/me/connections'
-          '?requestMask.includeField=person.names'),
-      headers: await user.authHeaders,
+    final response = await dio.get(
+      'https://people.googleapis.com/v1/people/me/connections'
+          '?requestMask.includeField=person.names',
+      options: Options(
+        headers: await user.authHeaders, // Set the content-length.
+      ),
     );
+
     if (response.statusCode != 200) {
       setState(() {
         _contactText = 'People API gave a ${response.statusCode} '
             'response. Check logs for details.';
       });
-      print('People API ${response.statusCode} response: ${response.body}');
+      print('People API ${response.statusCode} response: ${response.data}');
       return;
     }
-    final Map<String, dynamic> data =
-        json.decode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> data = response.data;
     final String? namedContact = _pickFirstNamedContact(data);
     setState(() {
       if (namedContact != null) {
@@ -155,10 +154,16 @@ class _LoginGoogleState extends State<LoginGoogle> {
 
         print('✅ accessToken: $accessToken');
         print('✅ idToken: $idToken');
-        print(user?.email);
 
-        // TODO: 이 idToken을 Spring Boot 서버로 전송하여 로그인 처리
+        print(user?.email);
+        Map<String, String> getTokens = await login(user?.email);
+
+        final storage = Get.find<FlutterSecureStorage>();
+
+        storage.write(key: 'access', value: getTokens['access']);
+        storage.write(key: 'refresh', value: getTokens['refresh']);
       }
+
     } catch (error) {
       print(error);
     }
@@ -173,7 +178,7 @@ class _LoginGoogleState extends State<LoginGoogle> {
   // On the web, this must be called from an user interaction (button click).
   // #docregion RequestScopes
   Future<void> _handleAuthorizeScopes() async {
-    final bool isAuthorized = await _googleSignIn.requestScopes(scopes);
+    final bool isAuthorized = await _googleSignIn.requestScopes(myScopes);
     // #enddocregion RequestScopes
     setState(() {
       _isAuthorized = isAuthorized;
