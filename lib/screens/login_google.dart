@@ -15,8 +15,9 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:law_alarm_front/services/api_test.dart';
+import 'package:law_alarm_front/services/auth_api.dart';
 import 'sign_in_button.dart';
+import 'select.dart';
 
 
 /// The scopes required by this application.
@@ -160,8 +161,11 @@ class _LoginGoogleState extends State<LoginGoogle> {
 
         final storage = Get.find<FlutterSecureStorage>();
 
-        storage.write(key: 'access', value: getTokens['access']);
-        storage.write(key: 'refresh', value: getTokens['refresh']);
+        await storage.write(key: 'access', value: getTokens['access']);
+        await storage.write(key: 'refresh', value: getTokens['refresh']);
+
+        Get.to(()=> const Select());
+        print("왜 이동안한대");
       }
 
     } catch (error) {

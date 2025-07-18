@@ -1,14 +1,13 @@
 import 'package:dio/dio.dart';
-
-final dio = Dio();
+import 'api_client.dart';
 
 Future<Map<String, String>> login(String? email) async {
 
   print("입력받은 이메일입니다.>>"+ email!);
   Map<String, String> tokens = {};
   try {
-    final response = await dio.post(
-      'http://10.0.2.2:8080/auth/login',
+    final response = await ApiClient.dio.post(
+        '/auth/login',
       data:{'email': email}
     );
 
@@ -21,3 +20,4 @@ Future<Map<String, String>> login(String? email) async {
 
   return tokens;
 }
+
