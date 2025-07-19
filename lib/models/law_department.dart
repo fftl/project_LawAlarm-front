@@ -19,4 +19,8 @@ class LawDepartment {
     'id': id,
     'lawDepartmentName': lawDepartmentName,
   };
+
+  @override
+  String toString() =>
+      'LawDepartment(id: $id, lawDepartmentName: $lawDepartmentName)';
 }
